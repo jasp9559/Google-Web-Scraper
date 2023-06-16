@@ -1,0 +1,79 @@
+import requests
+from bs4 import BeautifulSoup
+import pandas as pd
+
+
+def scrape_google_search_results(query):
+    # Send a GET request to the Google search page
+    url = f"https://www.google.com/search?q={query}"
+    headers = {
+        'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/114.0.0.0 Safari/537.36',
+        'Accept': 'text/html,application/xhtml+xml,application/xml;q=0.9,*/*;q=0.8',
+        'Accept-Language': 'en-US,en;q=0.5',
+        'Accept-Encoding': 'gzip, deflate',
+        'DNT': '1',
+        'Connection': 'keep-alive',
+        'Upgrade-Insecure-Requests': '1'
+    }
+    response = requests.get(url, headers=headers)
+
+    # Parse the HTML content of the search results page
+    soup = BeautifulSoup(response.content, 'html.parser')
+
+    # Find all the search result links
+    search_results = soup.find_all('div', class_='yuRUbf')
+
+    # Extract the links from the search results
+    links = []
+    for result in search_results:
+        link = result.find('a')['href']
+        links.append(link)
+
+    return links
+
+
+def scrape_web_page(url):
+    # Send a GET request to the web page
+    headers = {
+        'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/114.0.0.0 Safari/537.36',
+        'Accept': 'text/html,application/xhtml+xml,application/xml;q=0.9,*/*;q=0.8',
+        'Accept-Language': 'en-US,en;q=0.5',
+        'Accept-Encoding': 'gzip, deflate',
+        'DNT': '1',
+        'Connection': 'keep-alive',
+        'Upgrade-Insecure-Requests': '1'
+    }
+    response = requests.get(url, headers=headers)
+
+    # Parse the HTML content of the web page
+    soup = BeautifulSoup(response.content, 'html.parser')
+
+    # Extract the main text from the web page
+    paragraphs = soup.find_all('p')
+    main_text = ' '.join([p.get_text() for p in paragraphs])
+
+    return main_text
+
+
+def main():
+    # Define the input text for the Google search
+    input_text = "what are the chances of a black hole hitting earth"
+
+    # Scrape the search results from Google
+    search_results = scrape_google_search_results(input_text)
+
+    # Scrape the main text from each web page
+    data = []
+    for link in search_results:
+        main_text = scrape_web_page(link)
+        data.append({'Link': link, 'Main Text': main_text})
+
+    # Create a pandas DataFrame from the scraped data
+    df = pd.DataFrame(data)
+
+    # Save the data to a CSV file
+    df.to_csv('scraped_data2.csv', index=False)
+
+
+# Call the main function
+main()
